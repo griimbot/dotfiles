@@ -2,13 +2,17 @@
 set -euo pipefail
 
 ENV_FILE="${HOME}/.config/opencode/serve.env"
+mkdir -p "$(dirname "$ENV_FILE")"
 
 if [ -f "$ENV_FILE" ]; then
     echo "[INFO] ${ENV_FILE} already exists"
     exit 0
 fi
 
-PASSWORD="{{ .opencodePassword }}"
+PASSWORD="$(cat <<'PW_EOF'
+{{ .opencodePassword }}
+PW_EOF
+)"
 
 if [ -z "$PASSWORD" ] || [ "$PASSWORD" = "your-password-here" ]; then
     read -rsp "Enter opencode password: " PASSWORD

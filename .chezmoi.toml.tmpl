@@ -1,9 +1,3 @@
-[git]
-    autoAdd = true
-    autoCommit = true
-    autoPush = true
-    commitMessageTemplate = '{{ if eq (index .chezmoi.args 0) "add" }}feat{{ else if eq (index .chezmoi.args 0) "apply" }}chore{{ else }}chore{{ end }}: {{ .chezmoi.args | join " " }}'
-
 [data]
     email = {{ promptString "email" | quote }}
     name = {{ promptString "name" | quote }}
