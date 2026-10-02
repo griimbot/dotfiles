@@ -1,6 +1,7 @@
 {{- $fzf := (gitHubLatestRelease "junegunn/fzf").TagName -}}
 {{- $starship := (gitHubLatestRelease "starship/starship").TagName -}}
 {{- $rg := (gitHubLatestRelease "BurntSushi/ripgrep").TagName -}}
+{{- $nvim := (gitHubLatestRelease "neovim/neovim").TagName -}}
 
 [".config/bat/themes/Catppuccin-mocha.tmTheme"]
   type = "file"
@@ -12,39 +13,31 @@
   url = "https://raw.githubusercontent.com/catppuccin/btop/main/themes/catppuccin_mocha.theme"
   refreshPeriod = "168h"
 
-[".local/share/bash-completion/completions/fzf"]
-  type = "file"
-  url = "https://raw.githubusercontent.com/junegunn/fzf/{{ $fzf }}/shell/completion.bash"
-  refreshPeriod = "168h"
-
-[".bashrc.d/50-fzf-key-bindings.sh"]
-  type = "file"
-  url = "https://raw.githubusercontent.com/junegunn/fzf/{{ $fzf }}/shell/key-bindings.bash"
-  refreshPeriod = "168h"
-
 [".local/bin/fzf"]
-  type = "file"
+  type = "archive-file"
   url = "https://github.com/junegunn/fzf/releases/download/{{ $fzf }}/fzf-{{ trimPrefix "v" $fzf }}-linux_amd64.tar.gz"
+  path = "fzf"
   executable = true
-  refreshPeriod = "168h"
-  [".local/bin/fzf".filter]
-    command = "tar"
-    args = ["--extract", "--file", "/dev/stdin", "--gzip", "--to-stdout", "fzf"]
 
 [".local/bin/starship"]
-  type = "file"
+  type = "archive-file"
   url = "https://github.com/starship/starship/releases/download/{{ $starship }}/starship-x86_64-unknown-linux-musl.tar.gz"
+  path = "starship"
   executable = true
-  refreshPeriod = "168h"
-  [".local/bin/starship".filter]
-    command = "tar"
-    args = ["--extract", "--file", "/dev/stdin", "--gzip", "--to-stdout", "starship"]
 
 [".local/bin/rg"]
-  type = "file"
+  type = "archive-file"
   url = "https://github.com/BurntSushi/ripgrep/releases/download/{{ $rg }}/ripgrep-{{ $rg }}-x86_64-unknown-linux-musl.tar.gz"
+  path = "ripgrep-{{ $rg }}-x86_64-unknown-linux-musl/rg"
   executable = true
-  refreshPeriod = "168h"
-  [".local/bin/rg".filter]
-    command = "tar"
-    args = ["--extract", "--file", "/dev/stdin", "--gzip", "--strip-components=1", "--wildcards", "--to-stdout", "*/rg"]
+
+# neovim: the release tarball is split into bin/share/lib so the binary finds its runtime
+{{- range $dir := list "bin" "share" "lib" }}
+
+[".local/share/nvim-dist/{{ $dir }}"]
+  type = "archive"
+  url = "https://github.com/neovim/neovim/releases/download/{{ $nvim }}/nvim-linux-x86_64.tar.gz"
+  exact = true
+  include = ["*/{{ $dir }}/**"]
+  stripComponents = 2
+{{- end }}
