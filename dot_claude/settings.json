@@ -1,10 +1,11 @@
 {
-  "model": "sonnet",
-  "theme": "dark-ansi",
-  "tui": "fullscreen",
   "attribution": {
     "commit": "",
     "pr": ""
   },
-  "includeCoAuthoredBy": false
+  "includeCoAuthoredBy": false,
+  "model": "sonnet",
+  "tui": "fullscreen",
+  "theme": "dark-ansi",
+  "agentPushNotifEnabled": true
 }
