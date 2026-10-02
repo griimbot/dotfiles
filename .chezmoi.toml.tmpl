@@ -2,6 +2,7 @@
     autoAdd = true
     autoCommit = true
     autoPush = true
+    commitMessageTemplate = '{{ if eq (index .chezmoi.args 0) "add" }}feat{{ else if eq (index .chezmoi.args 0) "apply" }}chore{{ else }}chore{{ end }}: {{ .chezmoi.args | join " " }}'
 
 [data]
     email = "161859772+griimbot@users.noreply.github.com"
