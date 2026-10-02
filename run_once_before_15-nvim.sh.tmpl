@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+VERSION="0.12.5"
+
+if command -v nvim >/dev/null && [[ "$(nvim --version | head -n1)" == *"v${VERSION}"* ]]; then
+    echo "[INFO] Neovim ${VERSION} already installed."
+    exit 0
+fi
+
+URL="https://github.com/neovim/neovim/releases/download/v${VERSION}/nvim-linux-x86_64.appimage"
+
+TMP_FILE="/tmp/nvim.appimage"
+TMP_EXTRACT="/tmp/nvim-check"
+INSTALL_DIR="/usr/local/bin"
+APPIMAGE_PATH="${INSTALL_DIR}/nvim"
+EXTRACT_DIR="${INSTALL_DIR}/nvim-dir"
+
+check_glibc_version() {
+    echo "[INFO] Checking glibc compatibility..."
+
+    mkdir -p "$TMP_EXTRACT"
+    cd "$TMP_EXTRACT"
+    "$TMP_FILE" --appimage-extract > /dev/null
+    cd - > /dev/null
+
+    local nvim_bin
+    nvim_bin=$(find "$TMP_EXTRACT/squashfs-root" -name "nvim" -type f | head -n1)
+
+    if [[ -z "$nvim_bin" ]]; then
+        echo "[WARN] Could not find nvim binary for glibc check, skipping."
+        return
+    fi
+
+    local required
+    required=$(objdump -p "$nvim_bin" 2>/dev/null \
+        | grep -oP 'GLIBC_\K[0-9]+\.[0-9]+' \
+        | sort -V | tail -n1)
+
+    if [[ -z "$required" ]]; then
+        echo "[WARN] Could not determine required glibc version, skipping check."
+        return
+    fi
+
+    local system
+    system=$(ldd --version | awk 'NR==1{print $NF}')
+
+    echo "[INFO] Required glibc: ${required}, system glibc: ${system}"
+
+    if [[ "$(printf '%s\n' "$required" "$system" | sort -V | head -n1)" != "$required" ]]; then
+        echo "[ERROR] System glibc ${system} is older than required ${required}."
+        echo "        Neovim ${VERSION} cannot run on this system."
+        rm -rf "$TMP_EXTRACT"
+        exit 1
+    fi
+
+    echo "[INFO] glibc version OK."
+    rm -rf "$TMP_EXTRACT"
+}
+
+echo "[INFO] Installing Neovim ${VERSION}"
+
+echo "[INFO] Downloading..."
+if ! curl -fL "$URL" -o "$TMP_FILE" 2>/dev/null; then
+    echo "[ERROR] Neovim version ${VERSION} not found."
+    echo "        Check available releases: https://github.com/neovim/neovim/releases"
+    exit 1
+fi
+chmod +x "$TMP_FILE"
+
+check_glibc_version
+
+echo "[INFO] Installing to ${INSTALL_DIR} (requires sudo)..."
+sudo mv "$TMP_FILE" "$APPIMAGE_PATH"
+
+echo "[INFO] Extracting AppImage..."
+cd "$INSTALL_DIR"
+sudo rm -rf "$EXTRACT_DIR"
+sudo "$APPIMAGE_PATH" --appimage-extract > /dev/null
+sudo mv squashfs-root "$EXTRACT_DIR"
+
+echo "[INFO] Linking nvim binary..."
+sudo ln -sf "${EXTRACT_DIR}/AppRun" "$APPIMAGE_PATH"
+
+echo "[INFO] Verifying installation..."
+nvim --version | head -n 1
+
+echo "[SUCCESS] Neovim ${VERSION} installed globally."
